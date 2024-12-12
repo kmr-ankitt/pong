@@ -78,6 +78,50 @@ class Paddle{
         }
 };
 
+class PlayerScore{
+    public:
+        SDL_Renderer* renderer; 
+        TTF_Font* font;
+        SDL_Surface* surface;
+        SDL_Texture* texture;
+        SDL_Rect rect;
+        
+        PlayerScore(Vec2 position, SDL_Renderer * renderer, TTF_Font* font) : renderer(renderer) , font(font){
+            
+            int width, height;
+            
+            /*
+            * TTF_RenderText_Solid will allocate a new 8-bit, palettized surface. The surface's
+            * 0 pixel will be the colorkey, giving a transparent background. The 1 pixel
+            * will be set to the text color.
+            */
+            surface = TTF_RenderText_Solid(font, "0", {0xFF, 0xFF, 0xFF, 0xFF});
+            
+            // Creates a texture from a surface
+            texture = SDL_CreateTextureFromSurface(renderer, surface);
+           
+            // Query the width and height of the texture 
+    		SDL_QueryTexture(texture, nullptr, nullptr, &width, &height);
+            
+    		rect.x = static_cast<int>(position.x);
+    		rect.y = static_cast<int>(position.y);
+    		rect.w = width;
+    		rect.h = height;
+        }
+        
+        // Destructor to free the surface and texture
+        ~PlayerScore(){
+            SDL_FreeSurface(surface);
+            SDL_DestroyTexture(texture);
+        }
+        
+        void Draw(){
+            
+            //This copies a portion of the texture to the current rendering target.
+            SDL_RenderCopy(renderer, texture, nullptr, &rect);
+        }
+};
+
 int main(){
 	// Initialize SDL components
     SDL_Init(SDL_INIT_VIDEO);
@@ -103,6 +147,12 @@ int main(){
 	*/
 	Paddle paddleLeft(Vec2(50.0f, WINDOW_HEIGHT/2.0f - PADDLE_HEIGHT/2.0));
 	Paddle paddleRight(Vec2( WINDOW_WIDTH - 50.0f , WINDOW_HEIGHT/2.0f - PADDLE_HEIGHT/2.0));
+	
+	/* 
+	* PlayerScore objects are created and their initial positions are set. 
+	*/
+	PlayerScore playerLeftScore(Vec2(WINDOW_WIDTH/4.0f, 20), renderer, scoreFont);
+	PlayerScore playerRightScore(Vec2(3 * WINDOW_WIDTH/4.0f, 20), renderer, scoreFont);
 	
 	// Game logic
 	{
@@ -168,7 +218,13 @@ int main(){
 		    */
 		    paddleLeft.Draw(renderer);
 		    paddleRight.Draw(renderer);
-			
+						
+			/*
+			* Drawing the Player Scores
+		    */			
+			playerLeftScore.Draw();
+			playerRightScore.Draw();
+		
 			/* Present the backbuffer
 			* SDL_RENDERPresent() Updates the screen with any rendering performed since the previous call.
             *
