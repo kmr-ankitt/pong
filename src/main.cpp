@@ -1,10 +1,12 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_rect.h>
+#include <SDL2/SDL_render.h>
 
 const int WINDOW_WIDTH = 1280;
 const int WINDOW_HEIGHT = 720;
+const int BALL_WIDTH = 15;
+const int BALL_HEIGHT = 15;
 
-int main()
-{
 /*
 *2D Vector class  
 *   - x, y are the coordinates of the vector
@@ -33,12 +35,43 @@ class Vec2{
         }
 };
 
+class Ball{
+    public:
+        Vec2 position;
+        SDL_Rect rect;
+        
+        Ball(Vec2 position): position(position){
+            rect.x = static_cast<int>(position.x);
+            rect.y = static_cast<int>(position.y);
+            rect.h = BALL_HEIGHT;
+            rect.w = BALL_WIDTH;
+        }   
+        
+        void Draw(SDL_Renderer *renderer){
+            rect.x = static_cast<int>(position.x);
+            rect.y = static_cast<int>(position.y);
+            
+            // Fills the rectangle on the current rendering target with the drawing color.
+            SDL_RenderFillRect(renderer, &rect);
+        }
+};
+
+
+int main(){
 	// Initialize SDL components
     SDL_Init(SDL_INIT_VIDEO);
 
 	// Creates a window with the specified position, dimensions, and flags.
 	SDL_Window* window = SDL_CreateWindow("Pong", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
+	
+	/*
+    * Ball object is created and it's initial position is set to the center of the window.
+    *   - Half of the ball’s width and height are subtracted from the x and y
+	*     values because SDL2 considers the origin of an
+	*     object to be the upper left corner
+	*/
+	Ball ball(Vec2(WINDOW_WIDTH/2.0f - BALL_WIDTH/2.0f , WINDOW_HEIGHT/2.0f - BALL_HEIGHT/2.0f));
 
 	// Game logic
 	{
@@ -94,6 +127,10 @@ class Vec2{
 		          SDL_RenderDrawPoint(renderer,WINDOW_WIDTH/2, y);
 			}
 			
+			/* 
+			* Drawing the Ball
+		    */
+			ball.Draw(renderer);
 			
 			/* Present the backbuffer
 			* SDL_RENDERPresent() Updates the screen with any rendering performed since the previous call.
