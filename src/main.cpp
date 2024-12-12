@@ -6,7 +6,7 @@ const int WINDOW_HEIGHT = 720;
 int main()
 {
 	// Initialize SDL components
-	SDL_Init(SDL_INIT_VIDEO);
+    SDL_Init(SDL_INIT_VIDEO);
 
 	// Creates a window with the specified position, dimensions, and flags.
 	SDL_Window* window = SDL_CreateWindow("Pong", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
@@ -50,14 +50,23 @@ int main()
 				}
 			}
 
-			// Clear the window to black if no event is detected
+			// Clear the window to black
 			SDL_SetRenderDrawColor(renderer, 0x0, 0x0, 0x0, 0xFF);
 			SDL_RenderClear(renderer);
-
-			//
-			// Rendering will happen here
-			//
-
+			
+			// Setting the renderer colour to white 
+			SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+			
+			/*
+			* Drawing the Net
+			*    - y%5 is used to draw the dotted line
+			*/
+			for(int y = 0 ; y < WINDOW_HEIGHT ; ++y ){
+			    if(y%5)
+		          SDL_RenderDrawPoint(renderer,WINDOW_WIDTH/2, y);
+			}
+			
+			
 			/* Present the backbuffer
 			* SDL_RENDERPresent() Updates the screen with any rendering performed since the previous call.
             *
