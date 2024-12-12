@@ -1,6 +1,5 @@
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_rect.h>
-#include <SDL2/SDL_render.h>
+#include <SDL2/SDL_ttf.h>
 
 const int WINDOW_WIDTH = 1280;
 const int WINDOW_HEIGHT = 720;
@@ -82,10 +81,14 @@ class Paddle{
 int main(){
 	// Initialize SDL components
     SDL_Init(SDL_INIT_VIDEO);
-
+    TTF_Init();
+    
 	// Creates a window with the specified position, dimensions, and flags.
 	SDL_Window* window = SDL_CreateWindow("Pong", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
+	
+	// Initialize the font
+	TTF_Font* scoreFont = TTF_OpenFont("DejaVuSansMono.ttf", 40);
 	
 	/*
     * Ball object is created and it's initial position is set to the center of the window.
@@ -184,6 +187,8 @@ int main(){
 	// Cleanup
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
+	TTF_CloseFont(scoreFont);
+	TTF_Quit();
 	SDL_Quit();
 
 	return 0;
