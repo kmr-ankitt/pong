@@ -6,6 +6,8 @@ const int WINDOW_WIDTH = 1280;
 const int WINDOW_HEIGHT = 720;
 const int BALL_WIDTH = 15;
 const int BALL_HEIGHT = 15;
+const int PADDLE_WIDTH = 10;
+const int PADDLE_HEIGHT = 100;
 
 /*
 *2D Vector class  
@@ -56,6 +58,26 @@ class Ball{
         }
 };
 
+class Paddle{
+    public:
+        Vec2 position;
+        SDL_Rect rect;
+        
+        Paddle(Vec2 position) :  position(position){
+            rect.x = static_cast<int>(position.x);
+            rect.y = static_cast<int>(position.y);
+            rect.h = PADDLE_HEIGHT;
+            rect.w = PADDLE_WIDTH;
+        }  
+        
+        void Draw(SDL_Renderer * renderer){
+            rect.x = static_cast<int>(position.x);
+            rect.y = static_cast<int>(position.y);
+            
+            // Fills the rectangle on the current rendering target with the drawing color.
+            SDL_RenderFillRect(renderer, &rect);
+        }
+};
 
 int main(){
 	// Initialize SDL components
@@ -73,6 +95,12 @@ int main(){
 	*/
 	Ball ball(Vec2(WINDOW_WIDTH/2.0f - BALL_WIDTH/2.0f , WINDOW_HEIGHT/2.0f - BALL_HEIGHT/2.0f));
 
+	/*
+	* Paddle objects are created and their initial positions are set to the left and right
+	*/
+	Paddle paddleLeft(Vec2(50.0f, WINDOW_HEIGHT/2.0f - PADDLE_HEIGHT/2.0));
+	Paddle paddleRight(Vec2( WINDOW_WIDTH - 50.0f , WINDOW_HEIGHT/2.0f - PADDLE_HEIGHT/2.0));
+	
 	// Game logic
 	{
 		bool running = true;
@@ -131,6 +159,12 @@ int main(){
 			* Drawing the Ball
 		    */
 			ball.Draw(renderer);
+			
+			/*
+			* Drawing the Paddles
+		    */
+		    paddleLeft.Draw(renderer);
+		    paddleRight.Draw(renderer);
 			
 			/* Present the backbuffer
 			* SDL_RENDERPresent() Updates the screen with any rendering performed since the previous call.
