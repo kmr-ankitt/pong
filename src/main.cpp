@@ -315,7 +315,7 @@ int main(){
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
 	
 	// Initialize the font
-	TTF_Font* scoreFont = TTF_OpenFont("DejaVuSansMono.ttf", 40);
+	TTF_Font* scoreFont = TTF_OpenFont("assets/font/DejaVuSansMono.ttf", 40);
 	
 	/*
     * Ball object is created and it's initial position is set to the center of the window.
