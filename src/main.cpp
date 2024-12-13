@@ -1,6 +1,9 @@
+#include <SDL2/SDL_render.h>
+#include <SDL2/SDL_surface.h>
 #include <chrono>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <string>
 
 const int WINDOW_WIDTH = 1280;
 const int WINDOW_HEIGHT = 720;
@@ -202,6 +205,25 @@ class PlayerScore{
             //This copies a portion of the texture to the current rendering target.
             SDL_RenderCopy(renderer, texture, nullptr, &rect);
         }
+        
+        
+        /*
+        * setScore function is called when the score changes 
+        * - The old surface and texture are freed
+        * - A new surface and texture are created with the new score
+        */
+        void setScore(int score){
+            SDL_FreeSurface(surface);
+            SDL_DestroyTexture(texture);
+            
+            surface = TTF_RenderText_Solid(font, std::to_string(score).c_str(), {0xFF, 0xFF, 0xFF, 0xFF});
+            texture = SDL_CreateTextureFromSurface(renderer, surface);
+            
+            int width, height;
+            SDL_QueryTexture(texture, nullptr, nullptr, &width, &height);
+            rect.w = width;
+            rect.h = height;
+        }
 };
 
 /* To detect a collision between the balls and the paddles,
@@ -317,7 +339,10 @@ int main(){
 	
 	// Game logic
 	{
-		bool running = true;
+	    int leftPlayerScore = 0;
+	    int rightPlayerScore  = 0;
+	
+	    bool running = true;
 		bool buttons[4] = {false};
 		
 		float dt = 0.0f;
@@ -423,6 +448,19 @@ int main(){
                 ball.CollideWithPaddle(contact);
             }else if(contact = CheckWallCollision(ball); contact.type != CollisionType::None){
                 ball.CollideWithWall(contact);
+                
+                /*
+                * - If the ball collides with the left wall then the right player scores
+                * - If the ball collides with the right wall then the left player scores
+                */
+                if(contact.type == CollisionType::Left){
+                    ++rightPlayerScore;
+                    playerRightScore.setScore(rightPlayerScore);
+                }else if(contact.type == CollisionType::Right){
+                    ++leftPlayerScore;
+                    playerLeftScore.setScore(leftPlayerScore);
+                }
+                
             }
 			
 			// Clear the window to black
