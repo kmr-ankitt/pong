@@ -158,6 +158,40 @@ class PlayerScore{
         }
 };
 
+/* To detect a collision between the balls and the paddles,
+*  we’ll make use of something called the Separating Axis Theorem (SAT). 
+*       -The SAT says (in simplified terms) that if you can show that 
+*        the projections of two objects onto an axis have a gap, 
+*        then the objects are not colliding. 
+*/
+
+bool CheckPaddleCollision(Ball const& ball, Paddle const& paddle){
+    float ballLeft = ball.position.x;
+    float ballRight = ball.position.x + BALL_WIDTH;
+    float ballTop = ball.position.y;
+    float ballBottom = ball.position.y + BALL_HEIGHT;
+
+    float paddleLeft = paddle.position.x;
+    float paddleRight = paddle.position.x + PADDLE_WIDTH;
+    float paddleTop = paddle.position.y;
+    float paddleBottom = paddle.position.y + PADDLE_HEIGHT;
+
+    // No collision if the ball is to the left, right, above, or below the paddle
+    if(ballLeft >= paddleRight)
+        return false;
+
+    if( ballRight <= paddleLeft)
+        return false;
+    
+    if(ballTop >= paddleBottom)
+        return false;
+    
+    if(ballBottom <= paddleTop)
+        return false;
+    
+    return true;
+}
+
 int main(){
 	// Initialize SDL components
     SDL_Init(SDL_INIT_VIDEO);
@@ -290,6 +324,11 @@ int main(){
 			
 			// Update the ball position
 			ball.update(dt);
+			
+			// If ball is colliding with the paddle, reverse the velocity of the ball
+			if(CheckPaddleCollision(ball, paddleLeft) || CheckPaddleCollision(ball, paddleRight)){
+			    ball.velocity.x = -ball.velocity.x;
+			}
 			
 			// Clear the window to black
 			SDL_SetRenderDrawColor(renderer, 0x0, 0x0, 0x0, 0xFF);
