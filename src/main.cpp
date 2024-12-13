@@ -9,7 +9,7 @@ const int BALL_HEIGHT = 15;
 const int PADDLE_WIDTH = 10;
 const int PADDLE_HEIGHT = 100;
 const float PADDLE_SPEED = 1.0f;
-
+const float BALL_SPEED = 1.0f;
 
 /*
 * Stores the state of the buttons 
@@ -52,14 +52,19 @@ class Vec2{
 class Ball{
     public:
         Vec2 position;
+        Vec2 velocity;
         SDL_Rect rect;
         
-        Ball(Vec2 position): position(position){
+        Ball(Vec2 position, Vec2 velocity): position(position), velocity(velocity){
             rect.x = static_cast<int>(position.x);
             rect.y = static_cast<int>(position.y);
             rect.h = BALL_HEIGHT;
             rect.w = BALL_WIDTH;
         }   
+        
+        void update(float dt){
+            position += velocity * dt;
+        }
         
         void Draw(SDL_Renderer *renderer){
             rect.x = static_cast<int>(position.x);
@@ -171,7 +176,7 @@ int main(){
 	*     values because SDL2 considers the origin of an
 	*     object to be the upper left corner
 	*/
-	Ball ball(Vec2(WINDOW_WIDTH/2.0f - BALL_WIDTH/2.0f , WINDOW_HEIGHT/2.0f - BALL_HEIGHT/2.0f));
+	Ball ball(Vec2(WINDOW_WIDTH/2.0f - BALL_WIDTH/2.0f , WINDOW_HEIGHT/2.0f - BALL_HEIGHT/2.0f), Vec2(BALL_SPEED, 0.0f));
 
 	/*
 	* Paddle objects are created and their initial positions are set to the left and right
@@ -282,6 +287,9 @@ int main(){
 			// Update the paddle positions
 			paddleRight.update(dt);
 			paddleLeft.update(dt);
+			
+			// Update the ball position
+			ball.update(dt);
 			
 			// Clear the window to black
 			SDL_SetRenderDrawColor(renderer, 0x0, 0x0, 0x0, 0xFF);
