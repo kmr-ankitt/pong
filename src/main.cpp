@@ -11,14 +11,26 @@ const int PADDLE_HEIGHT = 100;
 const float PADDLE_SPEED = 1.0f;
 const float BALL_SPEED = 1.0f;
 
-/*
-* Stores the state of the buttons 
-*/
+// Stores the state of the buttons 
 enum Buttons{
     PaddleLeftUp = 0,
     PaddleLeftDown,
     PaddleRightUp,
     PaddleRightDown,
+};
+
+// Stores the type of collision
+enum class CollisionType{
+    None,
+    Top,
+    Middle,
+    Bottom,
+};
+
+// Stores the collision information
+struct Contact{
+    CollisionType type;
+    float penetration;
 };
 
 /*
@@ -72,6 +84,17 @@ class Ball{
             
             // Fills the rectangle on the current rendering target with the drawing color.
             SDL_RenderFillRect(renderer, &rect);
+        }
+        
+        void CollideWithPaddle(Contact const& contact){
+            position.x += contact.penetration;
+            velocity.x = -velocity.x;
+            
+            if (contact.type == CollisionType::Top) {
+                velocity.y = -.75f * BALL_SPEED;
+            } else if (contact.type == CollisionType::Bottom) {
+                velocity.y = .75f * BALL_SPEED;
+            }
         }
 };
 
@@ -165,7 +188,7 @@ class PlayerScore{
 *        then the objects are not colliding. 
 */
 
-bool CheckPaddleCollision(Ball const& ball, Paddle const& paddle){
+Contact CheckPaddleCollision(Ball const& ball, Paddle const& paddle){
     float ballLeft = ball.position.x;
     float ballRight = ball.position.x + BALL_WIDTH;
     float ballTop = ball.position.y;
@@ -176,20 +199,43 @@ bool CheckPaddleCollision(Ball const& ball, Paddle const& paddle){
     float paddleTop = paddle.position.y;
     float paddleBottom = paddle.position.y + PADDLE_HEIGHT;
 
+    Contact contact{};
+    
     // No collision if the ball is to the left, right, above, or below the paddle
     if(ballLeft >= paddleRight)
-        return false;
+        return contact;
 
     if( ballRight <= paddleLeft)
-        return false;
+        return contact;
     
     if(ballTop >= paddleBottom)
-        return false;
+        return contact;
     
     if(ballBottom <= paddleTop)
-        return false;
+        return contact;
     
-    return true;
+    // Calculate the range of the paddle where the ball collided    
+    float paddleRangeUpper = paddleBottom - (2.0f * PADDLE_HEIGHT / 3.0f);
+    float paddleRangeMiddle = paddleBottom - (PADDLE_HEIGHT / 3.0f);
+    
+    if(ball.velocity.x < 0){
+        // Left paddle collision
+        contact.penetration = paddleRight - ballLeft;
+    }else if(ball.velocity.x > 0){
+        // Right paddle collision
+        contact.penetration = paddleLeft - ballRight;
+    }
+  
+    // Determine the type of collision based on the range of the paddle where the ball collided
+    if((ballBottom > paddleTop) && (ballBottom < paddleRangeUpper)){
+        contact.type = CollisionType::Top;
+    }else if((ballBottom > paddleRangeUpper) && (ballBottom < paddleRangeMiddle)){
+        contact.type = CollisionType::Middle;
+    }else{
+        contact.type = CollisionType::Bottom;
+    }
+    
+    return contact;
 }
 
 int main(){
@@ -326,9 +372,11 @@ int main(){
 			ball.update(dt);
 			
 			// If ball is colliding with the paddle, reverse the velocity of the ball
-			if(CheckPaddleCollision(ball, paddleLeft) || CheckPaddleCollision(ball, paddleRight)){
-			    ball.velocity.x = -ball.velocity.x;
-			}
+			if(Contact contact = CheckPaddleCollision(ball, paddleLeft); contact.type != CollisionType::None){
+			    ball.CollideWithPaddle(contact);
+			}else if(contact = CheckPaddleCollision(ball, paddleRight); contact.type != CollisionType::None){
+                ball.CollideWithPaddle(contact);
+            }
 			
 			// Clear the window to black
 			SDL_SetRenderDrawColor(renderer, 0x0, 0x0, 0x0, 0xFF);
