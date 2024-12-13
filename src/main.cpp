@@ -1,9 +1,8 @@
-#include <SDL2/SDL_render.h>
-#include <SDL2/SDL_surface.h>
 #include <chrono>
+#include <string>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
-#include <string>
+#include <SDL2/SDL_mixer.h>
 
 const int WINDOW_WIDTH = 1280;
 const int WINDOW_HEIGHT = 720;
@@ -307,8 +306,9 @@ Contact CheckWallCollision(Ball const& ball){
 
 int main(){
 	// Initialize SDL components
-    SDL_Init(SDL_INIT_VIDEO);
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
     TTF_Init();
+    Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
     
 	// Creates a window with the specified position, dimensions, and flags.
 	SDL_Window* window = SDL_CreateWindow("Pong", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
@@ -316,6 +316,10 @@ int main(){
 	
 	// Initialize the font
 	TTF_Font* scoreFont = TTF_OpenFont("assets/font/DejaVuSansMono.ttf", 40);
+	
+	//Initialize sound effects
+	Mix_Chunk* wallHitSound = Mix_LoadWAV("assets/audio/WallHit.wav");
+	Mix_Chunk* paddleHitSound = Mix_LoadWAV("assets/audio/PaddleHit.wav");
 	
 	/*
     * Ball object is created and it's initial position is set to the center of the window.
@@ -444,8 +448,14 @@ int main(){
 			// If ball is colliding with the paddle, reverse the velocity of the ball
 			if(Contact contact = CheckPaddleCollision(ball, paddleLeft); contact.type != CollisionType::None){
 			    ball.CollideWithPaddle(contact);
+				
+				// Play the paddle hit sound
+				Mix_PlayChannel(-1, paddleHitSound, 0);
 			}else if(contact = CheckPaddleCollision(ball, paddleRight); contact.type != CollisionType::None){
                 ball.CollideWithPaddle(contact);
+                
+                // Play the paddle hit sound
+                Mix_PlayChannel(-1, paddleHitSound, 0);
             }else if(contact = CheckWallCollision(ball); contact.type != CollisionType::None){
                 ball.CollideWithWall(contact);
                 
@@ -459,8 +469,11 @@ int main(){
                 }else if(contact.type == CollisionType::Right){
                     ++leftPlayerScore;
                     playerLeftScore.setScore(leftPlayerScore);
+                }else{
+                    
+                    // Play the wall hit sound
+                    Mix_PlayChannel(-1, wallHitSound, 0);
                 }
-                
             }
 			
 			// Clear the window to black
@@ -518,6 +531,8 @@ int main(){
 	}
 
 	// Cleanup
+	Mix_FreeChunk(wallHitSound);
+	Mix_FreeChunk(paddleHitSound);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	TTF_CloseFont(scoreFont);
