@@ -1,3 +1,4 @@
+#include <chrono>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
@@ -7,6 +8,18 @@ const int BALL_WIDTH = 15;
 const int BALL_HEIGHT = 15;
 const int PADDLE_WIDTH = 10;
 const int PADDLE_HEIGHT = 100;
+const float PADDLE_SPEED = 1.0f;
+
+
+/*
+* Stores the state of the buttons 
+*/
+enum Buttons{
+    PaddleLeftUp = 0,
+    PaddleLeftDown,
+    PaddleRightUp,
+    PaddleRightDown,
+};
 
 /*
 *2D Vector class  
@@ -60,14 +73,31 @@ class Ball{
 class Paddle{
     public:
         Vec2 position;
+        Vec2 velocity;
         SDL_Rect rect;
         
-        Paddle(Vec2 position) :  position(position){
+        Paddle(Vec2 position, Vec2 velocity) :  position(position), velocity(velocity){
             rect.x = static_cast<int>(position.x);
             rect.y = static_cast<int>(position.y);
             rect.h = PADDLE_HEIGHT;
             rect.w = PADDLE_WIDTH;
         }  
+        
+        void update(float dt){
+            
+            // Update the position of the paddle
+            position += velocity * dt;
+            
+            if(position.y < 0){
+                
+                // If paddle is on the top of the window, set it to 0
+                position.y = 0;
+            }else if(position.y > (WINDOW_HEIGHT - PADDLE_HEIGHT)){
+                
+                // If paddle is on the bottom of the window, set it to the bottom
+                position.y = WINDOW_HEIGHT - PADDLE_HEIGHT;
+            }
+        }
         
         void Draw(SDL_Renderer * renderer){
             rect.x = static_cast<int>(position.x);
@@ -97,7 +127,8 @@ class PlayerScore{
             */
             surface = TTF_RenderText_Solid(font, "0", {0xFF, 0xFF, 0xFF, 0xFF});
             
-            // Creates a texture from a surface
+            // Creates a texture from a surface 
+            // Any time the score changes, a new surface and texture must be created, and the old ones are destroyed.
             texture = SDL_CreateTextureFromSurface(renderer, surface);
            
             // Query the width and height of the texture 
@@ -145,8 +176,8 @@ int main(){
 	/*
 	* Paddle objects are created and their initial positions are set to the left and right
 	*/
-	Paddle paddleLeft(Vec2(50.0f, WINDOW_HEIGHT/2.0f - PADDLE_HEIGHT/2.0));
-	Paddle paddleRight(Vec2( WINDOW_WIDTH - 50.0f , WINDOW_HEIGHT/2.0f - PADDLE_HEIGHT/2.0));
+	Paddle paddleLeft(Vec2(50.0f, WINDOW_HEIGHT/2.0f - PADDLE_HEIGHT/2.0), Vec2(0.0f, 0.0f));
+	Paddle paddleRight(Vec2( WINDOW_WIDTH - 50.0f , WINDOW_HEIGHT/2.0f - PADDLE_HEIGHT/2.0), Vec2(0.0f, 0.0f));
 	
 	/* 
 	* PlayerScore objects are created and their initial positions are set. 
@@ -157,10 +188,16 @@ int main(){
 	// Game logic
 	{
 		bool running = true;
-
+		bool buttons[4] = {false};
+		
+		float dt = 0.0f;
+		
 		// Continue looping and processing events until user exits
 		while (running)
 		{
+		    // Calculate the time taken to render the frame at the start
+            auto startTime = std::chrono::high_resolution_clock::now();  
+		
 		    // Creates a new event structure queue
 			SDL_Event event;
 			
@@ -185,13 +222,67 @@ int main(){
 				else if (event.type == SDL_KEYDOWN)
 				{
     				// event.key.keysym.sym returns the key that was pressed
-					if (event.key.keysym.sym == SDLK_ESCAPE)
-					{
-						running = false;
-					}
+                    switch (event.key.keysym.sym) {
+                        case SDLK_ESCAPE:
+                            running = false;
+                            break;
+                        case SDLK_k:
+                            buttons[Buttons::PaddleRightUp] = true;
+                            break;
+                        case SDLK_j:
+                            buttons[Buttons::PaddleRightDown] = true;
+                            break;
+                        case SDLK_w:
+                            buttons[Buttons::PaddleLeftUp] = true;
+                            break;
+                        case SDLK_s:
+                            buttons[Buttons::PaddleLeftDown] = true;
+                            break;
+                    }
+				} else if(event.type == SDL_KEYUP){
+                    switch (event.key.keysym.sym) {
+                        case SDLK_k:
+                            buttons[Buttons::PaddleRightUp] = false;
+                            break;
+                        case SDLK_j:
+                            buttons[Buttons::PaddleRightDown] = false;
+                            break;
+                        case SDLK_w:
+                            buttons[Buttons::PaddleLeftUp] = false;
+                            break;
+                        case SDLK_s:
+                            buttons[Buttons::PaddleLeftDown] = false;
+                            break;
+                    }
 				}
 			}
 
+			/*
+			* Adjust the paddle speed according to the button pressed
+			*   - If the up button is pressed, it's velocity is set to -PADDLE_SPEED
+			*   - If the down button is pressed, it's velocity is set to PADDLE_SPEED
+			*   - If no button is pressed, it's velocity is set to 0
+		    */
+			if(buttons[Buttons::PaddleLeftUp]){
+			    paddleLeft.velocity.y = -PADDLE_SPEED;
+			} else if(buttons[Buttons::PaddleLeftDown]){
+			    paddleLeft.velocity.y = PADDLE_SPEED;
+			} else{
+			    paddleLeft.velocity.y = 0.0f;
+			}
+			
+			if(buttons[Buttons::PaddleRightUp]){
+			    paddleRight.velocity.y = -PADDLE_SPEED;
+			} else if(buttons[Buttons::PaddleRightDown]){
+			    paddleRight.velocity.y = PADDLE_SPEED;
+			} else{
+			    paddleRight.velocity.y = 0.0f;
+			}
+		
+			// Update the paddle positions
+			paddleRight.update(dt);
+			paddleLeft.update(dt);
+			
 			// Clear the window to black
 			SDL_SetRenderDrawColor(renderer, 0x0, 0x0, 0x0, 0xFF);
 			SDL_RenderClear(renderer);
@@ -237,6 +328,12 @@ int main(){
             * becomes the backbuffer.F
             */
 			SDL_RenderPresent(renderer);
+			
+			// Calculate the time taken to render the frame at the end 
+			auto stopTime = std::chrono::high_resolution_clock::now();
+			
+			// Calculates the difference between the start and stop times in milliseconds
+			dt = std::chrono::duration<float, std::chrono::milliseconds::period>(stopTime - startTime).count();
 		}
 	}
 
