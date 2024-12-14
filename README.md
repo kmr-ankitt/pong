@@ -26,7 +26,7 @@ For RPM-based systems like Fedora, you can install the dependencies using:
 sudo dnf install SDL2-devel cmake
 ```
 
-## Installation
+## Building 
 
 To install the Pong game, clone the repository and navigate to the project directory:
 
@@ -34,8 +34,6 @@ To install the Pong game, clone the repository and navigate to the project direc
 git clone https://www.github.com/kmr-ankitt/pong.git
 cd pong
 ```
-
-## Building 
 
 Build the project using CMake:
 
