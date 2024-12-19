@@ -37,6 +37,13 @@ struct Contact{
     float penetration;
 };
 
+// Define game states
+enum GameState {
+    START_SCREEN,
+    PLAYING,
+    EXIT
+};
+
 /*
 *2D Vector class  
 *   - x, y are the coordinates of the vector
@@ -304,6 +311,16 @@ Contact CheckWallCollision(Ball const& ball){
     return contact;
 }
 
+// Function to render text
+void RenderText(SDL_Renderer* renderer, TTF_Font* font, const std::string& message, SDL_Color color, int x, int y) {
+    SDL_Surface* surface = TTF_RenderText_Solid(font, message.c_str(), color);
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_Rect dstRect = { x, y, surface->w, surface->h };
+    SDL_RenderCopy(renderer, texture, nullptr, &dstRect);
+    SDL_FreeSurface(surface);
+    SDL_DestroyTexture(texture);
+}
+
 int main(){
 	// Initialize SDL components
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
@@ -316,6 +333,7 @@ int main(){
 	
 	// Initialize the font
 	TTF_Font* scoreFont = TTF_OpenFont("assets/font/DejaVuSansMono.ttf", 40);
+	TTF_Font* messageFont = TTF_OpenFont("assets/font/DejaVuSansMono.ttf", 20);
 	
 	//Initialize sound effects
 	Mix_Chunk* wallHitSound = Mix_LoadWAV("assets/audio/WallHit.wav");
@@ -351,6 +369,8 @@ int main(){
 		
 		float dt = 0.0f;
 		
+		GameState gameState = START_SCREEN;
+		
 		// Continue looping and processing events until user exits
 		while (running)
 		{
@@ -385,6 +405,11 @@ int main(){
                         case SDLK_ESCAPE:
                             running = false;
                             break;
+                        case SDLK_SPACE:
+                            if(gameState == START_SCREEN){
+                                gameState = PLAYING;
+                            }
+                            break;
                         case SDLK_k:
                             buttons[Buttons::PaddleRightUp] = true;
                             break;
@@ -416,111 +441,126 @@ int main(){
 				}
 			}
 
-			/*
-			* Adjust the paddle speed according to the button pressed
-			*   - If the up button is pressed, it's velocity is set to -PADDLE_SPEED
-			*   - If the down button is pressed, it's velocity is set to PADDLE_SPEED
-			*   - If no button is pressed, it's velocity is set to 0
-		    */
-			if(buttons[Buttons::PaddleLeftUp]){
-			    paddleLeft.velocity.y = -PADDLE_SPEED;
-			} else if(buttons[Buttons::PaddleLeftDown]){
-			    paddleLeft.velocity.y = PADDLE_SPEED;
-			} else{
-			    paddleLeft.velocity.y = 0.0f;
-			}
-			
-			if(buttons[Buttons::PaddleRightUp]){
-			    paddleRight.velocity.y = -PADDLE_SPEED;
-			} else if(buttons[Buttons::PaddleRightDown]){
-			    paddleRight.velocity.y = PADDLE_SPEED;
-			} else{
-			    paddleRight.velocity.y = 0.0f;
-			}
-		
-			// Update the paddle positions
-			paddleRight.update(dt);
-			paddleLeft.update(dt);
-			
-			// Update the ball position
-			ball.update(dt);
-			
-			// If ball is colliding with the paddle, reverse the velocity of the ball
-			if(Contact contact = CheckPaddleCollision(ball, paddleLeft); contact.type != CollisionType::None){
-			    ball.CollideWithPaddle(contact);
-				
-				// Play the paddle hit sound
-				Mix_PlayChannel(-1, paddleHitSound, 0);
-			}else if(contact = CheckPaddleCollision(ball, paddleRight); contact.type != CollisionType::None){
-                ball.CollideWithPaddle(contact);
-                
-                // Play the paddle hit sound
-                Mix_PlayChannel(-1, paddleHitSound, 0);
-            }else if(contact = CheckWallCollision(ball); contact.type != CollisionType::None){
-                ball.CollideWithWall(contact);
-                
-                /*
-                * - If the ball collides with the left wall then the right player scores
-                * - If the ball collides with the right wall then the left player scores
-                */
-                if(contact.type == CollisionType::Left){
-                    ++rightPlayerScore;
-                    playerRightScore.setScore(rightPlayerScore);
-                }else if(contact.type == CollisionType::Right){
-                    ++leftPlayerScore;
-                    playerLeftScore.setScore(leftPlayerScore);
-                }else{
-                    
-                    // Play the wall hit sound
-                    Mix_PlayChannel(-1, wallHitSound, 0);
-                }
+			if (gameState == START_SCREEN) {
+                // Clear the window to black
+                SDL_SetRenderDrawColor(renderer, 0x0, 0x0, 0x0, 0xFF);
+                SDL_RenderClear(renderer);
+
+                // Render the start screen message
+                SDL_Color white = { 255, 255, 255, 255 };
+                RenderText(renderer, messageFont, "Press SPACE to start the game", white, WINDOW_WIDTH / 4, WINDOW_HEIGHT / 2 - 20);
+                RenderText(renderer, messageFont, "Press ESC to exit the game", white, WINDOW_WIDTH / 4, WINDOW_HEIGHT / 2 + 20);
+
+                SDL_RenderPresent(renderer);
             }
-			
-			// Clear the window to black
-			SDL_SetRenderDrawColor(renderer, 0x0, 0x0, 0x0, 0xFF);
-			SDL_RenderClear(renderer);
-			
-			// Setting the renderer colour to white 
-			SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-			
-			/*
-			* Drawing the Net
-			*    - y%5 is used to draw the dotted line
-			*/
-			for(int y = 0 ; y < WINDOW_HEIGHT ; ++y ){
-			    if(y%5)
-		          SDL_RenderDrawPoint(renderer,WINDOW_WIDTH/2, y);
+            
+			else if (gameState == PLAYING){
+    			/*
+    			* Adjust the paddle speed according to the button pressed
+    			*   - If the up button is pressed, it's velocity is set to -PADDLE_SPEED
+    			*   - If the down button is pressed, it's velocity is set to PADDLE_SPEED
+    			*   - If no button is pressed, it's velocity is set to 0
+    		    */
+    			if(buttons[Buttons::PaddleLeftUp]){
+    			    paddleLeft.velocity.y = -PADDLE_SPEED;
+    			} else if(buttons[Buttons::PaddleLeftDown]){
+    			    paddleLeft.velocity.y = PADDLE_SPEED;
+    			} else{
+    			    paddleLeft.velocity.y = 0.0f;
+    			}
+    			
+    			if(buttons[Buttons::PaddleRightUp]){
+    			    paddleRight.velocity.y = -PADDLE_SPEED;
+    			} else if(buttons[Buttons::PaddleRightDown]){
+    			    paddleRight.velocity.y = PADDLE_SPEED;
+    			} else{
+    			    paddleRight.velocity.y = 0.0f;
+    			}
+    		
+    			// Update the paddle positions
+    			paddleRight.update(dt);
+    			paddleLeft.update(dt);
+    			
+    			// Update the ball position
+    			ball.update(dt);
+    			
+    			// If ball is colliding with the paddle, reverse the velocity of the ball
+    			if(Contact contact = CheckPaddleCollision(ball, paddleLeft); contact.type != CollisionType::None){
+    			    ball.CollideWithPaddle(contact);
+    				
+    				// Play the paddle hit sound
+    				Mix_PlayChannel(-1, paddleHitSound, 0);
+    			}else if(contact = CheckPaddleCollision(ball, paddleRight); contact.type != CollisionType::None){
+                    ball.CollideWithPaddle(contact);
+                    
+                    // Play the paddle hit sound
+                    Mix_PlayChannel(-1, paddleHitSound, 0);
+                }else if(contact = CheckWallCollision(ball); contact.type != CollisionType::None){
+                    ball.CollideWithWall(contact);
+                    
+                    /*
+                    * - If the ball collides with the left wall then the right player scores
+                    * - If the ball collides with the right wall then the left player scores
+                    */
+                    if(contact.type == CollisionType::Left){
+                        ++rightPlayerScore;
+                        playerRightScore.setScore(rightPlayerScore);
+                    }else if(contact.type == CollisionType::Right){
+                        ++leftPlayerScore;
+                        playerLeftScore.setScore(leftPlayerScore);
+                    }else{
+                        
+                        // Play the wall hit sound
+                        Mix_PlayChannel(-1, wallHitSound, 0);
+                    }
+                }
+    			
+    			// Clear the window to black
+    			SDL_SetRenderDrawColor(renderer, 0x0, 0x0, 0x0, 0xFF);
+    			SDL_RenderClear(renderer);
+    			
+    			// Setting the renderer colour to white 
+    			SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+    			
+    			/*
+    			* Drawing the Net
+    			*    - y%5 is used to draw the dotted line
+    			*/
+    			for(int y = 0 ; y < WINDOW_HEIGHT ; ++y ){
+    			    if(y%5)
+    		          SDL_RenderDrawPoint(renderer,WINDOW_WIDTH/2, y);
+    			}
+    			
+    			/* 
+    			* Drawing the Ball
+    		    */
+    			ball.Draw(renderer);
+    			
+    			/*
+    			* Drawing the Paddles
+    		    */
+    		    paddleLeft.Draw(renderer);
+    		    paddleRight.Draw(renderer);
+    						
+    			/*
+    			* Drawing the Player Scores
+    		    */			
+    			playerLeftScore.Draw();
+    			playerRightScore.Draw();
+    		
+    			/* Present the backbuffer
+    			* SDL_RENDERPresent() Updates the screen with any rendering performed since the previous call.
+                *
+                * SDL's rendering functions operate on a backbuffer; that is, calling a
+                * rendering function such as SDL_RenderDrawLine() does not directly put a
+                * line on the screen, but rather updates the backbuffer. 
+                *
+                * Commonly in graphics, you render to a buffer that is not on screen (i.e., the backbuffer), 
+                * and then when ready you swap it with the buffer currently on screen and the frontbuffer 
+                * becomes the backbuffer.F
+                */
+    			SDL_RenderPresent(renderer);
 			}
-			
-			/* 
-			* Drawing the Ball
-		    */
-			ball.Draw(renderer);
-			
-			/*
-			* Drawing the Paddles
-		    */
-		    paddleLeft.Draw(renderer);
-		    paddleRight.Draw(renderer);
-						
-			/*
-			* Drawing the Player Scores
-		    */			
-			playerLeftScore.Draw();
-			playerRightScore.Draw();
-		
-			/* Present the backbuffer
-			* SDL_RENDERPresent() Updates the screen with any rendering performed since the previous call.
-            *
-            * SDL's rendering functions operate on a backbuffer; that is, calling a
-            * rendering function such as SDL_RenderDrawLine() does not directly put a
-            * line on the screen, but rather updates the backbuffer. 
-            *
-            * Commonly in graphics, you render to a buffer that is not on screen (i.e., the backbuffer), 
-            * and then when ready you swap it with the buffer currently on screen and the frontbuffer 
-            * becomes the backbuffer.F
-            */
-			SDL_RenderPresent(renderer);
 			
 			// Calculate the time taken to render the frame at the end 
 			auto stopTime = std::chrono::high_resolution_clock::now();
@@ -538,6 +578,5 @@ int main(){
 	TTF_CloseFont(scoreFont);
 	TTF_Quit();
 	SDL_Quit();
-
 	return 0;
 }
