@@ -331,13 +331,21 @@ int main(){
 	SDL_Window* window = SDL_CreateWindow("Pong", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
 	
-	// Initialize the font
-	TTF_Font* scoreFont = TTF_OpenFont("assets/font/DejaVuSansMono.ttf", 40);
-	TTF_Font* messageFont = TTF_OpenFont("assets/font/DejaVuSansMono.ttf", 20);
+    // Initialize the font
+    TTF_Font* scoreFont = TTF_OpenFont("../assets/font/DejaVuSansMono.ttf", 40);
+    if (!scoreFont) {
+        SDL_Log("Failed to load score font: %s", TTF_GetError());
+        return -1;
+    }
+    TTF_Font* messageFont = TTF_OpenFont("../assets/font/DejaVuSansMono.ttf", 20);
+    if (!messageFont) {
+        SDL_Log("Failed to load message font: %s", TTF_GetError());
+        return -1;
+    }
 	
 	//Initialize sound effects
-	Mix_Chunk* wallHitSound = Mix_LoadWAV("assets/audio/WallHit.wav");
-	Mix_Chunk* paddleHitSound = Mix_LoadWAV("assets/audio/PaddleHit.wav");
+	Mix_Chunk* wallHitSound = Mix_LoadWAV("../assets/audio/WallHit.wav");
+	Mix_Chunk* paddleHitSound = Mix_LoadWAV("../assets/audio/PaddleHit.wav");
 	
 	/*
     * Ball object is created and it's initial position is set to the center of the window.
@@ -443,15 +451,16 @@ int main(){
 
 			if (gameState == START_SCREEN) {
                 // Clear the window to black
-                SDL_SetRenderDrawColor(renderer, 0x0, 0x0, 0x0, 0xFF);
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
                 SDL_RenderClear(renderer);
 
                 // Render the start screen message
                 SDL_Color white = { 255, 255, 255, 255 };
-                RenderText(renderer, messageFont, "Press SPACE to start the game", white, WINDOW_WIDTH / 4, WINDOW_HEIGHT / 2 - 20);
-                RenderText(renderer, messageFont, "Press ESC to exit the game", white, WINDOW_WIDTH / 4, WINDOW_HEIGHT / 2 + 20);
+                RenderText(renderer, messageFont, "Press SPACE to start the game", white,  WINDOW_WIDTH / 2.8, WINDOW_HEIGHT / 2 - 20);
+                RenderText(renderer, messageFont, "Press ESC to exit the game", white, WINDOW_WIDTH / 2.7, WINDOW_HEIGHT / 2 + 20);
 
                 SDL_RenderPresent(renderer);
+                continue;
             }
             
 			else if (gameState == PLAYING){
