@@ -332,20 +332,20 @@ int main(){
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
 	
     // Initialize the font
-    TTF_Font* scoreFont = TTF_OpenFont("../assets/font/DejaVuSansMono.ttf", 40);
+    TTF_Font* scoreFont = TTF_OpenFont("assets/font/DejaVuSansMono.ttf", 40);
     if (!scoreFont) {
         SDL_Log("Failed to load score font: %s", TTF_GetError());
         return -1;
     }
-    TTF_Font* messageFont = TTF_OpenFont("../assets/font/DejaVuSansMono.ttf", 20);
+    TTF_Font* messageFont = TTF_OpenFont("assets/font/DejaVuSansMono.ttf", 20);
     if (!messageFont) {
         SDL_Log("Failed to load message font: %s", TTF_GetError());
         return -1;
     }
 	
 	//Initialize sound effects
-	Mix_Chunk* wallHitSound = Mix_LoadWAV("../assets/audio/WallHit.wav");
-	Mix_Chunk* paddleHitSound = Mix_LoadWAV("../assets/audio/PaddleHit.wav");
+	Mix_Chunk* wallHitSound = Mix_LoadWAV("assets/audio/WallHit.wav");
+	Mix_Chunk* paddleHitSound = Mix_LoadWAV("assets/audio/PaddleHit.wav");
 	
 	/*
     * Ball object is created and it's initial position is set to the center of the window.
